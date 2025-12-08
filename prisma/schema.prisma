@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  fullName      String?   @map("full_name")
+  title         String?
+  location      String?
+  phone         String?
+  github        String?
+  linkedin      String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  resumes       Resume[]
+  portfolios    Portfolio[]
+  subscriptions Subscription[]
+  transactions  Transaction[]
+  giftedAccess  GiftedAccess[]
+  analytics     Analytics[]
+
+  @@map("users")
+}
+
+model Resume {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  name           String
+  template       String   @default("classic")
+  colorScheme    String   @default("traditional") @map("color_scheme")
+  data           Json
+  visibleSections Json    @map("visible_sections")
+  atsScore       Int?     @map("ats_score")
+  atsFeedback    Json?    @map("ats_feedback")
+  versionHistory Json?    @default("[]") @map("version_history")
+  isPublic       Boolean  @default(false) @map("is_public")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analytics      Analytics[]
+
+  @@map("resumes")
+}
+
+model Portfolio {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  subdomain   String?  @unique
+  theme       Json?    @default("{}")
+  font        String   @default("inter")
+  layout      String   @default("modern")
+  sections    Json?    @default("[]")
+  profileImage String? @map("profile_image")
+  customLogo   String? @map("custom_logo")
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analytics   Analytics[]
+
+  @@map("portfolios")
+}
+
+model Subscription {
+  id                    String    @id @default(uuid())
+  userId                String    @unique @map("user_id")
+  
+  plan                  String    @default("free") // 'free', 'pro', 'enterprise'
+  status                String    @default("active") // 'active', 'canceled', 'past_due', 'trialing'
+  
+  // Payment gateway details
+  stripeCustomerId      String?   @map("stripe_customer_id")
+  stripeSubscriptionId  String?   @map("stripe_subscription_id")
+  
+  // Trial management
+  trialEndsAt           DateTime? @map("trial_ends_at")
+  trialDaysGranted      Int       @default(0) @map("trial_days_granted")
+  
+  // Subscription period
+  currentPeriodStart    DateTime? @map("current_period_start")
+  currentPeriodEnd      DateTime? @map("current_period_end")
+  
+  // Feature limits and usage
+  aiCreditsUsed         Int       @default(0) @map("ai_credits_used")
+  aiCreditsLimit        Int       @default(5) @map("ai_credits_limit")
+  portfoliosUsed        Int       @default(0) @map("portfolios_used")
+  portfoliosLimit       Int       @default(1) @map("portfolios_limit")
+  resumesUsed           Int       @default(0) @map("resumes_used")
+  resumesLimit          Int       @default(1) @map("resumes_limit")
+  
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([plan])
+  @@map("subscriptions")
+}
+
+model PricingPlan {
+  id                    String   @id @default(uuid())
+  name                  String   @unique // 'free', 'pro', 'enterprise'
+  displayName           String   @map("display_name") // 'Free', 'Professional', 'Enterprise'
+  description           String?
+  
+  // Pricing
+  monthlyPrice          Float    @map("monthly_price")
+  yearlyPrice           Float    @map("yearly_price")
+  currency              String   @default("USD")
+  
+  // Feature flags (JSON object with boolean values)
+  features              Json     @default("{}")
+  
+  // Limits
+  aiCreditsPerMonth     Int      @map("ai_credits_per_month")
+  portfoliosLimit       Int      @map("portfolios_limit")
+  resumesLimit          Int      @map("resumes_limit")
+  
+  // Stripe product IDs
+  stripeMonthlyPriceId  String?  @map("stripe_monthly_price_id")
+  stripeYearlyPriceId   String?  @map("stripe_yearly_price_id")
+  
+  isActive              Boolean  @default(true) @map("is_active")
+  sortOrder             Int      @default(0) @map("sort_order")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_plans")
+}
+
+model Transaction {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  subscriptionId        String?  @map("subscription_id")
+  
+  amount                Float
+  currency              String   @default("USD")
+  status                String   @default("pending") // 'pending', 'completed', 'failed', 'refunded'
+  
+  // Payment gateway
+  gateway               String   @default("stripe") // 'stripe', 'paypal'
+  gatewayTransactionId  String?  @map("gateway_transaction_id")
+  gatewayInvoiceId      String?  @map("gateway_invoice_id")
+  
+  // Details
+  description           String
+  type                  String   @default("subscription") // 'subscription', 'one_time', 'credit_purchase'
+  metadata              Json?    @default("{}")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription          Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([gateway])
+  @@map("transactions")
+}
+
+model AdminSettings {
+  id                    String   @id @default(uuid())
+  
+  // Feature pricing (per use)
+  atsScorePrice         Float    @default(0.10) @map("ats_score_price")
+  resumeParsePrice      Float    @default(0.05) @map("resume_parse_price")
+  
+  // Trial defaults
+  defaultTrialDays      Int      @default(7) @map("default_trial_days")
+  
+  // Special offers (JSON array)
+  activeOffers          Json?    @default("[]") @map("active_offers")
+  
+  // System settings
+  maintenanceMode       Boolean  @default(false) @map("maintenance_mode")
+  
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
+model GiftedAccess {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  
+  grantedBy             String   @map("granted_by") // Admin user ID
+  plan                  String   // Plan to grant ('pro', 'enterprise')
+  daysGranted           Int      @map("days_granted")
+  expiresAt             DateTime @map("expires_at")
+  
+  reason                String?  // Why access was gifted
+  isActive              Boolean  @default(true) @map("is_active")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("gifted_access")
+}
+
+
+model Analytics {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  portfolioId String?  @map("portfolio_id")
+  resumeId    String?  @map("resume_id")
+  eventType   String   @map("event_type")
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio   Portfolio? @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  resume      Resume?    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@map("analytics")
+}
