@@ -9,16 +9,29 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = 3001;
 
-app.use(cors({
+const corsOptions = {
     origin: [
         process.env.FRONTEND_URL || 'http://localhost:5173',
         'http://localhost:8080',
-        'http://localhost:3000'
+        'http://localhost:3000',
+        'https://port-cv-frontend.vercel.app', // Explicitly add production URL just in case
+        'https://port-cv-backend.vercel.app'
     ],
-    credentials: true
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions)); // Enable pre-flight for all routes
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Root route handler for health checks and verification
+app.get('/', (req, res) => {
+    res.status(200).send('PortCV Backend API is running successfully.');
+});
 
 // Basic health check route
 app.get('/health', (req, res) => {
@@ -60,6 +73,8 @@ app.use('/api/admin/database', adminDatabaseRoutes);
 const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+export default app;
 
 server.on('error', (e) => {
     console.error('Server error:', e);
