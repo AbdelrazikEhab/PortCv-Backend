@@ -6,7 +6,15 @@ import { PrismaClient } from '@prisma/client';
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
+console.log('Backend initializing...');
+let prisma: PrismaClient;
+try {
+    prisma = new PrismaClient();
+    console.log('Prisma client initialized successfully');
+} catch (error) {
+    console.error('Failed to initialize Prisma Client:', error);
+    // Continue without prisma to allow health check
+}
 const PORT = 3001;
 
 const corsOptions = {
