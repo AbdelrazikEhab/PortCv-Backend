@@ -14,7 +14,7 @@ router.post('/create-checkout-session', authenticateToken, async (req: any, res)
         const user = req.user;
 
         // Robust origin resolution
-        const origin = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:8080';
+        const origin = req.headers.origin || process.env.FRONTEND_URL || 'https://port-cv-frontend.vercel.app';
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
