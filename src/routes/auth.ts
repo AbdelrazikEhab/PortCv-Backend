@@ -9,20 +9,25 @@ const prisma = new PrismaClient();
 
 // Signup
 router.post('/signup', async (req, res) => {
+    console.log('Signup attempt received for:', req.body.email);
     try {
         const { email, password, fullName } = req.body;
 
         if (!email || !password) {
+            console.log('Signup failed: Missing email or password');
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
+            console.log('Signup failed: User already exists', email);
             return res.status(400).json({ error: 'User already exists' });
         }
 
+        console.log('Hashing password...');
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        console.log('Creating user in DB...');
         const user = await prisma.user.create({
             data: {
                 email,
@@ -30,24 +35,28 @@ router.post('/signup', async (req, res) => {
                 fullName,
             },
         });
+        console.log('User created:', user.id);
 
-        // Create default profile entries if needed (e.g. empty portfolio)
+        console.log('Creating portfolio...');
         await prisma.portfolio.create({
             data: { userId: user.id }
         });
 
+        console.log('Creating subscription...');
         await prisma.subscription.create({
             data: { userId: user.id }
         });
 
+        console.log('Generating token...');
         const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET as string, {
             expiresIn: '24h',
         });
 
+        console.log('Signup successful for:', email);
         res.status(201).json({ token, user: { id: user.id, email: user.email, fullName: user.fullName } });
     } catch (error) {
-        console.error('Signup error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Signup error details:', error);
+        res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
     }
 });
 
