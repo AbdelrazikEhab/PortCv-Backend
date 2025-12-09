@@ -4,8 +4,11 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
 
+import { prisma } from '../lib/prisma';
+
 const router = express.Router();
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient(); // Removed
+
 
 // Signup
 router.post('/signup', async (req, res) => {

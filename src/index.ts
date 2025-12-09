@@ -5,16 +5,16 @@ import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
 
+import { prisma } from './lib/prisma';
+
 const app = express();
+
 console.log('Backend initializing...');
-let prisma: PrismaClient;
-try {
-    prisma = new PrismaClient();
-    console.log('Prisma client initialized successfully');
-} catch (error) {
-    console.error('Failed to initialize Prisma Client:', error);
-    // Continue without prisma to allow health check
-}
+
+// Verify DB connection without crashing the main thread synchronously
+prisma.$connect()
+    .then(() => console.log('Prisma client connected successfully'))
+    .catch((error) => console.error('Failed to connect to DB:', error));
 const PORT = 3001;
 
 const corsOptions = {

@@ -2,9 +2,10 @@ import express from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
+import { prisma } from '../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient(); // Removed
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 // Create Checkout Session

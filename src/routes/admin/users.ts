@@ -1,9 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthRequest } from '../../middleware/authMiddleware';
+import { prisma } from '../../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient(); // Removed
 
 // Admin authentication middleware
 const requireAdmin = async (req: any, res: express.Response, next: express.NextFunction) => {

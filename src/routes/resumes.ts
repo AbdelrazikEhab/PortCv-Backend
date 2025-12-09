@@ -3,8 +3,10 @@ import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { checkResourceLimit, requireAICredits } from '../middleware/featureGate';
 
+import { prisma } from '../lib/prisma';
+
 const router = express.Router();
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient(); // Removed
 
 // Get all resumes for user
 router.get('/', authenticateToken, async (req: any, res) => {

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient(); // Removed
 
 // Middleware to check if user has access to a specific feature
 export const requireFeature = (featureName: string) => {

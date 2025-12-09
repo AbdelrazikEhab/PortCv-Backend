@@ -2,6 +2,7 @@ import express from 'express';
 import OpenAI from 'openai';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { requireAICredits } from '../middleware/featureGate';
+import { prisma } from '../lib/prisma';
 
 const router = express.Router();
 
@@ -277,9 +278,8 @@ router.post('/generate-portfolio-design', authenticateToken, requireAICredits(1)
             return res.status(400).json({ error: 'Resume ID is required' });
         }
 
-        // Import Prisma to fetch resume
-        const { PrismaClient } = require('@prisma/client');
-        const prisma = new PrismaClient();
+        // const { PrismaClient } = require('@prisma/client');
+        // const prisma = new PrismaClient();
 
         const resume = await prisma.resume.findUnique({
             where: { id: resumeId }
