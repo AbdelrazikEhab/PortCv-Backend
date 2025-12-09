@@ -25,6 +25,9 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Favicon handler
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Routes
 import authRoutes from './routes/auth';
 import resumeRoutes from './routes/resumes';
