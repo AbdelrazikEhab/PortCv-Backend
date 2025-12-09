@@ -23,7 +23,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions)); // Enable pre-flight for all routes
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -70,20 +69,26 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/projects', adminProjectsRoutes);
 app.use('/api/admin/database', adminDatabaseRoutes);
 
-const server = app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
-
+// Export app for Vercel
 export default app;
 
-server.on('error', (e) => {
-    console.error('Server error:', e);
-});
+// Only listen on port if not in production (Vercel handles binding)
+if (process.env.NODE_ENV !== 'production') {
+    const server = app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 
-// Keep process alive hack
-setInterval(() => {
-    // console.log('Heartbeat');
-}, 1000);
+    server.on('error', (e) => {
+        console.error('Server error:', e);
+    });
+}
+
+// Keep process alive hack (only for dev/long-running)
+if (process.env.NODE_ENV !== 'production') {
+    setInterval(() => {
+        // console.log('Heartbeat');
+    }, 1000);
+}
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
