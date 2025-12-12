@@ -12,6 +12,8 @@ const router = express.Router();
 
 // Signup
 router.post('/signup', async (req, res) => {
+    console.log('--- SIGNUP ATTEMPT START ---');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
     console.log('Signup attempt received for:', req.body.email);
     try {
         const { email, password, fullName } = req.body;
