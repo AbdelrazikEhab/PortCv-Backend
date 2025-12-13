@@ -62,7 +62,7 @@ export const requireAICredits = (creditsNeeded: number = 1) => {
                         userId: req.user.userId,
                         plan: 'free',
                         status: 'active',
-                        aiCreditsLimit: 5,
+                        aiCreditsLimit: 50, // Increased from 5 to 50
                         portfoliosLimit: 1,
                         resumesLimit: 1,
                     },
@@ -85,6 +85,17 @@ export const requireAICredits = (creditsNeeded: number = 1) => {
 
                 return next();
             }
+
+            // AUTO-UPGRADE: If user has low limit (e.g. old default of 5), upgrade them to 50
+            if (subscription.aiCreditsLimit < 50) {
+                console.log(`Auto-upgrading user ${req.user.userId} credit limit from ${subscription.aiCreditsLimit} to 50`);
+                subscription = await prisma.subscription.update({
+                    where: { id: subscription.id },
+                    data: { aiCreditsLimit: 50 }
+                });
+            }
+
+            // Check if user has enough credits
 
             // Check if user has enough credits
             if (subscription.aiCreditsUsed + creditsNeeded > subscription.aiCreditsLimit) {

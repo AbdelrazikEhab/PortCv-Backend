@@ -189,6 +189,11 @@ model AdminSettings {
   
   // System settings
   maintenanceMode       Boolean  @default(false) @map("maintenance_mode")
+
+  // Payment Gateway Config (Stripe)
+  stripePublishableKey  String?  @map("stripe_publishable_key")
+  stripeSecretKey       String?  @map("stripe_secret_key")
+  stripeWebhookSecret   String?  @map("stripe_webhook_secret")
   
   updatedAt             DateTime @updatedAt @map("updated_at")
 
