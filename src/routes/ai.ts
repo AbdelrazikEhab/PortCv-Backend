@@ -121,14 +121,29 @@ router.post('/interview-prep', authenticateToken, async (req: any, res) => {
 // ATS Score
 router.post('/ats-score', authenticateToken, requireAICredits(1), async (req: any, res) => {
     try {
-        const { resume, jobDescription } = req.body;
+        const { resume, jobDescription, language = 'en' } = req.body;
+        const targetLang = language === 'ar' ? 'Arabic' : 'English';
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content: "You are an expert ATS (Applicant Tracking System) analyzer. Analyze the resume against the job description (if provided) or general best practices. Return a JSON object with: score (0-100), breakdown (object with categories like 'Impact', 'Keywords', 'Format', 'Content' and their scores), missingKeywords (array), and improvements (array of strings)."
+                    content: `You are an expert ATS (Applicant Tracking System) analyzer with deep knowledge of hiring practices in both English and Arabic markets. Analyze the resume against the job description (if provided) or general best practices.
+
+                    Respond in ${targetLang}.
+
+                    Return a JSON object with: 
+                    - score (0-100)
+                    - breakdown (object with categories like 'Impact', 'Keywords', 'Format', 'Content' and their scores)
+                    - missingKeywords (array of strings in ${targetLang})
+                    - improvements (array of strings in ${targetLang})
+                    - summary (string in ${targetLang})
+                    - strengths (array of strings in ${targetLang})
+                    - keywords (array of strings in ${targetLang}, listing important missing keywords)
+
+                    Ensure the Score is rigorous and realistic. Do not give 100% easily. A good resume usually scores 70-85.
+                    `
                 },
                 {
                     role: "user",
@@ -157,14 +172,20 @@ router.post('/ats-score', authenticateToken, requireAICredits(1), async (req: an
 // AI Fix Resume
 router.post('/fix-resume', authenticateToken, requireAICredits(2), async (req: any, res) => {
     try {
-        const { resume, atsFeedback } = req.body;
+        const { resume, atsFeedback, language = 'en' } = req.body;
+        const targetLang = language === 'ar' ? 'Arabic' : 'English';
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert resume editor. Your task is to IMPROVE the provided resume data based on general best practices and specific ATS feedback (if provided).
+                    content: `You are an expert professional resume editor. Your task is to SIGNIFICANTLY IMPROVE the provided resume data based on general best practices and specific ATS feedback (if provided).
+                    
+                    The user's preferred language is ${targetLang}.
+                    - If the input resume is in English, keep it in English but improve standard and impact.
+                    - If the input resume is in Arabic, keep it in Arabic but improve professional tone.
+                    - IF appropriate, you may translate content if explicitly asked, but by default, preserve the resume's original language while improving the phrasing.
                     
                     Return the FULL resume JSON object with the exact same structure as the input, but with improved content.
                     
@@ -202,7 +223,8 @@ router.post('/fix-resume', authenticateToken, requireAICredits(2), async (req: a
 // Career Analysis - Analyze CV for strengths, weaknesses, and career guidance
 router.post('/career-analysis', authenticateToken, requireAICredits(2), async (req: any, res) => {
     try {
-        const { resume } = req.body;
+        const { resume, language = 'en' } = req.body;
+        const targetLang = language === 'ar' ? 'Arabic' : 'English';
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
@@ -211,8 +233,10 @@ router.post('/career-analysis', authenticateToken, requireAICredits(2), async (r
                     role: "system",
                     content: `You are an expert career advisor and CV analyst. Analyze the provided resume comprehensively and return a detailed JSON analysis.
 
+Respond in ${targetLang}.
+
 Your analysis should include:
-1. Career Level Detection (Junior/Mid/Senior) based on experience
+1. Career Level Detection (Junior/Mid/Senior/Lead/Executive) based on experience
 2. Strengths - What they're doing well (skills, achievements, impact)
 3. Weaknesses - Skill gaps, missing experience, areas needing improvement
 4. Red Flags - Common mistakes (vague descriptions, no metrics, poor formatting, etc.)
@@ -222,9 +246,9 @@ Your analysis should include:
 
 Be honest, specific, and constructive. Focus on actionable insights.
 
-Return ONLY valid JSON with this structure:
+Return ONLY valid JSON with this structure (values should be in ${targetLang}):
 {
-  "careerLevel": "Junior|Mid|Senior",
+  "careerLevel": "Junior|Mid|Senior...",
   "yearsExperience": number,
   "strengths": [
     { "area": string, "description": string, "score": number (0-100) }
